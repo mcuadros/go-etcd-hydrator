@@ -2,17 +2,26 @@ package hydrator
 
 import (
 	"fmt"
-	"math/rand"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/mcuadros/go-defaults"
 )
 
-var DefaultSeparator = "."
+var (
+	DefaultSeparator    = "."
+	Debug               = false
+	DebugEnvironmentVar = "ETCD_HYDRATOR_DEBUG"
+)
+
+func init() {
+	if len(os.Getenv(DebugEnvironmentVar)) != 0 {
+		Debug = true
+	}
+}
 
 type Hydrator struct {
 	client    *etcd.Client
@@ -26,8 +35,6 @@ func NewHydrator(client *etcd.Client) *Hydrator {
 		client:    client,
 		Separator: DefaultSeparator,
 	}
-
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	funcs := make(map[reflect.Kind]defaults.FillerFunc, 0)
 
@@ -118,6 +125,10 @@ func NewHydrator(client *etcd.Client) *Hydrator {
 }
 
 func (h *Hydrator) Hydrate(variable interface{}) {
+	if Debug {
+		fmt.Printf("Hydrating var: %q\n", reflect.TypeOf(variable).String())
+	}
+
 	h.filler.Fill(variable)
 }
 
@@ -132,7 +143,13 @@ func (h *Hydrator) getKey(field *defaults.FieldData) string {
 		panic(err)
 	}
 
-	return response.Node.Value
+	value := response.Node.Value
+
+	if Debug {
+		fmt.Printf("Recovered key %q with value %q\n", key, value)
+	}
+
+	return value
 }
 
 func (h *Hydrator) buildKey(field *defaults.FieldData) string {

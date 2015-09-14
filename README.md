@@ -49,6 +49,19 @@ curl -L -X PUT http://127.0.0.1:4001/v2/keys/rest -d value="http://rest.company.
 curl -L -X PUT http://127.0.0.1:4001/v2/keys/mongo.host -d value="127.0.0.1:27017"
 ```
 
+Debug
+-----
+You can enable the debug mode of this library setting the environment variable
+`ETCD_HYDRATOR_DEBUG` with the value `true`. (in fact any value is valid)
+
+When this variable is set a small log will be printed to the stdout:
+```
+Hydrating var: "*hydrator.Example"
+Recovered key "testing/string" with value "foo"
+Recovered key "testing/integer" with value "42"
+...
+```
+
 License
 -------
 
