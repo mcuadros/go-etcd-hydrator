@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/go-etcd/etcd"
+	"golang.org/x/net/context"
+
+	etcd "github.com/coreos/etcd/client"
 	"github.com/mcuadros/go-defaults"
 )
 
@@ -24,15 +26,17 @@ func init() {
 }
 
 type Hydrator struct {
-	client    *etcd.Client
+	client    etcd.Client
+	kAPI      etcd.KeysAPI
 	filler    *defaults.Filler
 	Folder    string
 	Separator string
 }
 
-func NewHydrator(client *etcd.Client) *Hydrator {
+func NewHydrator(client etcd.Client) *Hydrator {
 	h := &Hydrator{
 		client:    client,
+		kAPI:      etcd.NewKeysAPI(client),
 		Separator: DefaultSeparator,
 	}
 
@@ -134,11 +138,13 @@ func (h *Hydrator) Hydrate(variable interface{}) {
 
 func (h *Hydrator) getKey(field *defaults.FieldData) string {
 	key := h.buildKey(field)
-	response, err := h.client.Get(key, false, false)
+
+	response, err := h.kAPI.Get(context.Background(), key, nil)
 	if err != nil {
-		if eerr, ok := err.(*etcd.EtcdError); ok && eerr.ErrorCode == 100 {
+		/*	if eerr, ok := err.(*etcd.EtcdError); ok && eerr.ErrorCode == 100 {
+			fmt.Printf("Missing key %q\n", key)
 			return ""
-		}
+		}*/
 
 		panic(err)
 	}

@@ -3,7 +3,9 @@ package hydrator
 import (
 	"testing"
 
-	"github.com/coreos/go-etcd/etcd"
+	"golang.org/x/net/context"
+
+	etcd "github.com/coreos/etcd/client"
 
 	. "gopkg.in/check.v1"
 )
@@ -11,7 +13,8 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 type EtcdSuite struct {
-	client *etcd.Client
+	client etcd.Client
+	kAPI   etcd.KeysAPI
 }
 
 var _ = Suite(&EtcdSuite{})
@@ -27,22 +30,32 @@ var fixtures = map[string]string{
 }
 
 func (s *EtcdSuite) SetUpSuite(c *C) {
-	s.client = etcd.NewClient([]string{"http://127.0.0.1:2379"})
+	cfg := etcd.Config{
+		Endpoints: []string{"http://127.0.0.1:2379"},
+		Transport: etcd.DefaultTransport,
+	}
+
+	var err error
+	s.client, err = etcd.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	s.kAPI = etcd.NewKeysAPI(s.client)
+
 	for key, value := range fixtures {
-		if _, err := s.client.Set(key, value, 0); err != nil {
+		if _, err := s.kAPI.Set(context.Background(), key, value, nil); err != nil {
 			panic(err)
 		}
 	}
 }
 
 func (s *EtcdSuite) TearDownSuite(c *C) {
-	for key, _ := range fixtures {
-		if _, err := s.client.Delete(key, false); err != nil {
-			panic(err)
-		}
+	recursive := &etcd.DeleteOptions{
+		Recursive: true,
 	}
 
-	if _, err := s.client.DeleteDir(testFolder); err != nil {
+	if _, err := s.kAPI.Delete(context.Background(), testFolder, recursive); err != nil {
 		panic(err)
 	}
 }
