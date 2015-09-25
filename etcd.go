@@ -141,9 +141,11 @@ func (h *Hydrator) getKey(field *defaults.FieldData) string {
 
 	response, err := h.kAPI.Get(context.Background(), key, nil)
 	if err != nil {
-		fmt.Printf("%V, %s", err, err.(etcd.Error).Code)
 		if eerr, ok := err.(etcd.Error); ok && eerr.Code == etcd.ErrorCodeKeyNotFound {
-			fmt.Printf("Missing key %q\n", key)
+			if Debug {
+				fmt.Printf("Missing key %q\n", key)
+			}
+
 			return ""
 		}
 
