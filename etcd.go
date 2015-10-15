@@ -148,8 +148,6 @@ func (h *Hydrator) getKey(field *defaults.FieldData) string {
 
 			return ""
 		}
-
-		panic(err)
 	}
 
 	value := response.Node.Value
