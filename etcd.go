@@ -150,6 +150,13 @@ func (h *Hydrator) getKey(field *defaults.FieldData) string {
 		}
 	}
 
+	if response == nil || response.Node == nil {
+		if Debug {
+			fmt.Printf("Empty key %q\n", key)
+		}
+		return ""
+	}
+
 	value := response.Node.Value
 
 	if Debug {
